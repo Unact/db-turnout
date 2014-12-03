@@ -1,0 +1,11 @@
+local: &local
+  adapter: sqlite3
+  database: db/test.sqlite3
+  pool: 5
+  timeout: 5000
+
+development:
+  db_settings_file: "../development-http.yml"
+
+production:
+  db_settings_file: "../production-http.yml"

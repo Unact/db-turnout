@@ -11,6 +11,7 @@ gem 'thin'
 
 gem 'arel'
 gem 'sinatra-activerecord'
+gem 'activerecord'
 gem 'activesupport'
 
 gem "sqlanywhere"
@@ -22,5 +23,5 @@ group :production do
 end
 
 group :test do
-   gem 'sqlite3'
+  gem 'sqlite3'
 end

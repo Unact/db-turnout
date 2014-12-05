@@ -7,25 +7,38 @@ module HashToSql
     collect { |m| m.to_s }.
     sort! { |p1, p2| p2.length<=>p1.length}
     
-  def create_order_list(table, order_params)
-    order_list = []
+  def self.create_order_list(order_params)
+    order_hash = {}
     case order_params
+    when String
+      order_hash[order_params] = "asc"
     when Array
-      order_list.each do |p|
-        order_list << get_select_list_element(table, p)
+      order_params.each do |column|
+        if String===column
+          order_hash[column] = "asc"
+        else
+          raise Exception, "Неверный вид параметра #{column} для списка сортировки."
+        end
       end
     when Hash
-      order_params.each_pair do |column, as_value|
-        order_list << table[column].as(as_value)
+      order_params.each_pair do |column, order_value|
+        case order_value
+        when String
+          order_hash[column] = "asc"
+        when Hash
+          order_hash[column] = order_value
+        else
+          raise Exception, "Неверный вид параметра #{column} для списка сортировки. #{order_value.inspect}"
+        end
       end
     else
       raise Exception, "Неверный вид параметров для списка сортировки. #{select_params.inspect}"
     end
-    
-    order_list
+    puts *order_hash.inspect
+    order_hash
   end
   
-  def create_select_list(table, select_params)
+  def self.create_select_list(table, select_params)
     select_list = []
     case select_params
     when Array
@@ -43,7 +56,7 @@ module HashToSql
     select_list
   end
   
-  def get_select_list_element(table, element)
+  def self.get_select_list_element(table, element)
     case element
     when Hash
       select_hash = element.first
@@ -55,7 +68,7 @@ module HashToSql
     end
   end
   
-  def create_condition(table, condition, condition_hash, operation)
+  def self.create_condition(table, condition, condition_hash, operation)
     if Hash===condition_hash
       condition_hash = condition_hash.clone
       first_operation = condition_hash.shift
@@ -82,11 +95,11 @@ module HashToSql
     end
   end
     
-  def apply_predicate_with_operation(table, condition, predicate, field, operation, value)
+  def self.apply_predicate_with_operation(table, condition, predicate, field, operation, value)
     condition.send(operation, table[field].send(predicate, value))
   end
   
-  def get_predicate_and_field(str_key)
+  def self.get_predicate_and_field(str_key)
     predicate_found = false
     i = 0
     predicate_index = 0

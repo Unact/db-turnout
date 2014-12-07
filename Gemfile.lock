@@ -36,6 +36,7 @@ GEM
     multi_json (1.10.1)
     nokogiri (1.6.5)
       mini_portile (~> 0.6.0)
+    nori (2.4.0)
     rack (1.5.2)
     rack-protection (1.5.3)
       rack
@@ -83,6 +84,7 @@ DEPENDENCIES
   activesupport
   arel
   nokogiri
+  nori
   rake
   shotgun
   sinatra

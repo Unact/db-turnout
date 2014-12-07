@@ -5,6 +5,7 @@ gem 'rake'
 gem 'sinatra'
 gem 'sinatra-contrib'
 gem 'nokogiri'
+gem 'nori'
 
 gem 'shotgun'
 gem 'thin'

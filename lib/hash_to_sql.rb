@@ -41,6 +41,8 @@ module HashToSql
   def self.create_select_list(table, select_params)
     select_list = []
     case select_params
+    when String
+      select_list << table[select_params].as(select_params)
     when Array
       select_params.each do |p|
         select_list << get_select_list_element(table, p)
@@ -62,7 +64,7 @@ module HashToSql
       select_hash = element.first
       table[select_hash[0]].as(select_hash[1])
     when String
-      element
+      table[element].as(element)
     else
       raise Exception, "Неверный вид параметра для списка выбора. #{element.inspect}"
     end

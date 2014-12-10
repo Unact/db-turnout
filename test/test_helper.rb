@@ -7,15 +7,17 @@ require 'nori'
 require '../app.rb'
 
 CONTENT_TYPES = {
-  json: 'application/json',
-  html: 'text/html',
+  # json: 'application/json',
+  # html: 'text/html',
   xml: 'application/xml'
 }
 
 module ContentHelpers
-  def set_content_type(content_type)
-    header 'Accept', content_type
-    header 'CONTENT_TYPE', content_type
+  def set_content_type(content_type_str, content_type, body_obj = nil)
+    header 'Accept', content_type_str
+    header 'CONTENT_TYPE', content_type_str
+    
+    body_obj.send("to_#{content_type}") if body_obj
   end
   
   def parse_response_json(response)
@@ -56,7 +58,7 @@ module ContentHelpers
     parser = Nori.new
     data = parser.parse(response)
     
-    create_result_obj(data.to_a[0][1])
+    data && data.length>0 ? create_result_obj(data.to_a[0][1]) : nil
   end
   
   def create_result_obj(data)

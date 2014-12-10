@@ -6,7 +6,7 @@ module Helpers
       case type_str
       when "text/html"
         mime_found = true
-        return erb(:index, locals: { res: data, extra: @sql }), type_str
+        return erb(:index, locals: { res: data }), type_str
       when 'text/json', 'application/json'
         mime_found = true
         return data.to_json, type_str

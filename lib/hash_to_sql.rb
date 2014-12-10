@@ -12,30 +12,21 @@ module HashToSql
     case order_params
     when String
       order_hash[order_params] = "asc"
-    when Array
-      order_params.each do |column|
-        if String===column
-          order_hash[column] = "asc"
-        else
-          raise Exception, "Неверный вид параметра #{column} для списка сортировки."
-        end
-      end
     when Hash
       order_params.each_pair do |column, order_value|
-        case order_value
-        when String
-          order_hash[column] = "asc"
-        when Hash
-          order_hash[column] = order_value
+        if order_value.downcase=="desc"
+          order_hash[column] = "desc"
         else
-          raise Exception, "Неверный вид параметра #{column} для списка сортировки. #{order_value.inspect}"
+          order_hash[column] = "asc"
         end
       end
     else
-      raise Exception, "Неверный вид параметров для списка сортировки. #{select_params.inspect}"
+      raise Exception, "Неверный вид параметров для списка сортировки. #{order_params}"
     end
-    puts *order_hash.inspect
-    order_hash
+    order_hash.to_a.map do |pair|
+      pair[0] = ActiveRecord::Base.connection.quote_column_name(pair[0])
+      pair.join(' ')
+    end.join(', ')
   end
   
   def self.create_select_list(table, select_params)
@@ -49,10 +40,10 @@ module HashToSql
       end
     when Hash
       select_params.each_pair do |column, as_value|
-        select_list << table[column].as(as_value)
+        select_list << table[column].as(ActiveRecord::Base.connection.quote_column_name(as_value))
       end
     else
-      raise Exception, "Неверный вид параметров для списка выбора. #{select_params.inspect}"
+      raise Exception, "Неверный вид параметров для списка выбора. #{select_params}"
     end
     
     select_list
@@ -62,11 +53,21 @@ module HashToSql
     case element
     when Hash
       select_hash = element.first
-      table[select_hash[0]].as(select_hash[1])
+      table[select_hash[0]].as(ActiveRecord::Base.connection.quote_column_name(select_hash[1]))
     when String
-      table[element].as(element)
+      table[element].as(ActiveRecord::Base.connection.quote_column_name(element))
     else
-      raise Exception, "Неверный вид параметра для списка выбора. #{element.inspect}"
+      raise Exception, "Неверный вид параметра для списка выбора. #{element}"
+    end
+  end
+  
+  def self.create_update_list(table, update_hash)
+    if Array===update_hash || Hash===update_hash
+      update_hash.map do |row|
+        [table[row[0]], row[1]]
+      end
+    else
+      raise Exception, "Неверный вид параметра для обновления. #{update_hash}"
     end
   end
   
@@ -93,7 +94,7 @@ module HashToSql
       
       condition
     else
-      raise Exception, "Неверный вид параметров для условия. #{condition_hash.inspect}"
+      raise Exception, "Неверный вид параметров для условия. #{condition_hash}"
     end
   end
     

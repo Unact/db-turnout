@@ -25,32 +25,54 @@ class App < Sinatra::Base
     data
   end
   
-  post '/tables/:table_name/?:id?.?:format?', provides: ['json', 'xml', 'html'] do
-    insert_manager = Arel::InsertManager.new(ActiveRecord::Base)
+  post '/tables/:table_name.?:format?', provides: ['json', 'xml', 'html'] do
+    body_data_str = request.body.read
+    body_data = get_acceptable_body(body_data_str)
+    
+    if body_data.nil? || body_data.empty?
+      content_type request.accept.first
+      halt
+    end
+    
     table = Arel::Table.new(params[:table_name])
+    
     primary_key = table.primary_key
     
-    insert_list = HashToSql::create_insert_list(table, params[:data])
+    insert_list = HashToSql::create_insert_list(table, body_data["data"])
     
     if primary_key
+      ids = []
       
+      insert_list.each do |insert_row|
+        insert_manager = Arel::InsertManager.new(ActiveRecord::Base)
+        insert_manager.insert(insert_row)
+        sql = insert_manager.to_sql
+        ids << ActiveRecord::Base.connection.insert(sql)
+      end
+      
+      get_content_for_ids(table, ids)
     else
-      insert_manager.table(table)
-      sql = insert_manager.to_sql
-      
-      id = ActiveRecord::Base.connection.insert(sql)
+      sql = []
+      insert_list.each do |insert_row|
+        insert_manager = Arel::UpdateManager.new(ActiveRecord::Base)
+        insert_manager.insert(insert_row)
+        insert_manager.where(condition) if condition
+        sql << update_manager.to_sql
+      end
+      ActiveRecord::Base.connection.insert(sql.join(';\n'))
       content_type request.accept.first
+      nil
     end
   end
   
   put '/tables/:table_name/?:id?.?:format?', provides: ['json', 'xml', 'html'] do
     body_data_str = request.body.read
-    parser = Nori.new
-    body_data = parser.parse(body_data_str)
-    if body_data.nil? || body_data.length!=1
-      raise Exception, "Неверный вид параметров"
+    body_data = get_acceptable_body(body_data_str)
+    
+    if body_data.nil? || body_data.empty?
+      content_type request.accept.first
+      halt
     end
-    body_data = body_data.first[1]
     
     table = Arel::Table.new(params[:table_name])
     
@@ -61,12 +83,10 @@ class App < Sinatra::Base
       'and') if params[:id] || body_data["q"]
     
     ids = nil
-    primary_key = nil
+    primary_key = table.primary_key.name
     if params[:id]
-      ids = [params[:id]]
-      primary_key = "id" 
+      ids = [params[:id]] 
     else
-      primary_key = table.primary_key.name
       select_manager = table
       select_manager = select_manager.where(condition) if condition
       select_manager = select_manager.project(table[primary_key])
@@ -76,26 +96,15 @@ class App < Sinatra::Base
     
     update_list = HashToSql::create_update_list(table, body_data["data"])
     
-    sql = []
-    update_list.each do |update_row|
-      update_manager = Arel::UpdateManager.new(ActiveRecord::Base)
-      update_manager.table(table)
-      update_manager.set(update_list)
-      update_manager.where(condition) if condition
-      sql << update_manager.to_sql
-    end
+    update_manager = Arel::UpdateManager.new(ActiveRecord::Base)
+    update_manager.table(table)
+    update_manager.set(update_list)
+    update_manager.where(condition) if condition
+    sql = update_manager.to_sql
     
-    ActiveRecord::Base.connection.update(sql.join(';\n'))
-    
+    ActiveRecord::Base.connection.update(sql)
     if ids && !ids.empty?
-      select_manager = table
-      select_manager = select_manager.project(Arel.star)
-      select_manager = select_manager.where(table[primary_key].in(ids))
-      sql = select_manager.to_sql
-      raw_data = ActiveRecord::Base.connection.select_all(sql)
-      data, type_str = generate_acceptable_output(raw_data)
-      content_type(type_str)
-      data
+      get_content_for_ids(table, ids)
     else
       content_type request.accept.first
       nil
@@ -119,5 +128,22 @@ class App < Sinatra::Base
     ActiveRecord::Base.connection.delete(sql)
     content_type request.accept.first
     nil
+  end
+  
+  private
+  def get_records_by_ids(table, ids)
+    primary_key = table.primary_key.name
+    select_manager = table
+    select_manager = select_manager.project(Arel.star)
+    select_manager = select_manager.where(table[primary_key].in(ids))
+    sql = select_manager.to_sql
+    ActiveRecord::Base.connection.select_all(sql)
+  end
+  
+  def get_content_for_ids(table, ids)
+    raw_data = get_records_by_ids(table, ids)
+    data, type_str = generate_acceptable_output(raw_data)
+    content_type(type_str)
+    data
   end
 end

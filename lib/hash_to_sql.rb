@@ -62,12 +62,24 @@ module HashToSql
   end
   
   def self.create_update_list(table, update_hash)
-    if Array===update_hash || Hash===update_hash
-      update_hash.map do |row|
-        [table[row[0]], row[1]]
+    if Hash===update_hash
+      update_hash.map do |values|
+        [table[values[0]], values[1]]
       end
     else
-      raise Exception, "Неверный вид параметра для обновления. #{update_hash}"
+      raise Exception, "Неверный вид параметра для списка обновления. #{update_hash}"
+    end
+  end
+  
+  def self.create_insert_list(table, insert_array)
+    if Array===insert_array
+      insert_array.map do |row|
+        row.map do |values|
+          [table[values[0]], values[1]]
+        end
+      end
+    else
+      raise Exception, "Неверный вид параметра для списка вставки. #{insert_array}"
     end
   end
   

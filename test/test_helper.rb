@@ -25,7 +25,7 @@ class ActiveSupport::TestCase
   # Add more helper methods to be used by all tests here...
   
   CONTENT_TYPES = {
-    # json: 'application/json',
+    json: 'application/json',
     # html: 'text/html',
     xml: 'application/xml'
   }

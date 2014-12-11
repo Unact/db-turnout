@@ -98,6 +98,7 @@ class App < Sinatra::Base
       data
     else
       content_type request.accept.first
+      nil
     end
   end
   
@@ -117,5 +118,6 @@ class App < Sinatra::Base
     
     ActiveRecord::Base.connection.delete(sql)
     content_type request.accept.first
+    nil
   end
 end

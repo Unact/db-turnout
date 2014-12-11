@@ -1,95 +1,102 @@
 require File.expand_path '../test_helper.rb', __FILE__
 
-class MyTest < Minitest::Test
+class MyTest < ActiveSupport::TestCase
 
   include Rack::Test::Methods
-  include ContentHelpers
   
   def app
     App
   end
   
-  def test_index
-    params = {
-      s: {email: :mail, login: :login },
-      order: {email: :desc },
-      q: {
-        id_eq: 1,
-        or: {
-          id_lt: 5,
-          id_gt: 8,
-          and: {
-            id_gt: 0,
-            or: { id_lt: 1, id_gt: 2 },
-            email_not_eq: 'bt' 
-          },
-          email_eq: '1'
-        }
-      }
-    }
-    header 'AUTHORIZATION_KEY', SECURITY_KEY
-    
-    real_res = ActiveRecord::Base.connection.select_all("
-    SELECT email AS mail, login FROM spree_users ORDER BY email desc")
-    
-    CONTENT_TYPES.each_pair do |content_type, content_type_str|
-      puts content_type_str
-      set_content_type(content_type_str, content_type)
-      get '/tables/spree_users', params
-      assert last_response.ok?, last_response.inspect
-      
-      response_body = last_response.body
-      res = send("parse_response_#{content_type}", response_body)
-      
-      check_response_data(res, real_res)
-      puts "-------------"
+  CONTENT_TYPES.each_pair do |content_type, content_type_str|
+    define_method("test_index_#{content_type}".to_sym) do
+      index_content_type_test(content_type, content_type_str)
+    end
+    define_method("test_update_#{content_type}".to_sym) do
+      update_content_type_test(content_type, content_type_str)
     end
   end
   
-  def test_update
+  def index_content_type_test(content_type, content_type_str)
+    header 'AUTHORIZATION_KEY', SECURITY_KEY
+    
+    params = {
+      s: { name: :test_name, val: :val },
+      order: { test_name: :desc },
+      q: {
+        val_eq: 1,
+        or: {
+          val_lt: 5,
+          val_gt: 8,
+          and: {
+            val_gt: 0,
+            or: { val_lt: 1, val_gt: 2 },
+            name_not_eq: 'test_4' 
+          },
+          name_matches: '%1%'
+        }
+      }
+    }
+  
+    real_res = ActiveRecord::Base.connection.select_all('
+    SELECT
+      "test_table"."name" AS "test_name",
+      "test_table"."val" AS "val"
+    FROM "test_table"
+    WHERE
+      (
+        "test_table"."val" = 1
+        OR
+        (
+          ("test_table"."val" < 5 OR "test_table"."val" > 8)
+          AND
+          (
+            "test_table"."val" > 0
+            OR
+            ("test_table"."val" < 1 OR "test_table"."val" > 2)
+          )
+          AND
+          "test_table"."name" != \'test_4\' OR "test_table"."name" LIKE \'%1%\'
+        )
+      )
+    ORDER BY "test_name" desc
+    LIMIT 500')
+    
+    set_content_type(content_type_str, content_type)
+    get '/tables/test_table', params
+    assert last_response.ok?, last_response.inspect
+    
+    response_body = last_response.body
+    res = send("parse_response_#{content_type}", response_body)
+    
+    check_response_data(res, real_res)
+  end
+  
+  def update_content_type_test(content_type, content_type_str)
     header 'AUTHORIZATION_KEY', SECURITY_KEY
     
     body_obj = {
       data: {
-        email: '1@test.ru'
+        name: 'test_1'
       },
       q: {
-        email_eq: 'admin@test.ru'
+        name_eq: 'admin@test.ru'
       }
     }
     
+    body_str = set_content_type(content_type_str, content_type, body_obj)
+    put '/tables/test_table', body_str
+    assert last_response.ok?, last_response.inspect
+    
+    response_body = last_response.body
+    puts last_response.inspect
+    puts response_body
+    res = send("parse_response_#{content_type}", response_body)
+    
     real_res = ActiveRecord::Base.connection.select_all("
-    SELECT * FROM spree_users WHERE email = '#{body_obj[:data][:email]}'")
+    SELECT * FROM test_table WHERE name = '#{body_obj[:data][:name]}'")
     
-    CONTENT_TYPES.each_pair do |content_type, content_type_str|
-      puts content_type_str
-      body_str = set_content_type(content_type_str, content_type, body_obj)
-      put '/tables/spree_users', body_str
-      assert last_response.ok?, last_response.inspect
-      
-      response_body = last_response.body
-      res = send("parse_response_#{content_type}", response_body)
-      puts res.inspect
-      check_response_data(res, real_res)
-      puts "-------------"
-    end
-  end
-  
-  private
-  def check_response_data(res, real_res)
-    assert res, res
-    assert res[:columns], res
-    assert res[:rows], res
-    
-    assert_equal real_res.columns.length, res[:columns].length, res[:columns]
-    res[:columns].each_index do |i|
-      assert_equal real_res.columns[i], res[:columns][i], res[:columns]
-    end
-    
-    res[:rows].each_index do |i|
-      res[:rows][i].each_index do |j|
-        assert_equal real_res.rows[i][j], res[:rows][i][j]
-      end
-    end
+    puts res.inspect
+    check_response_data(res, real_res)
   end
 end

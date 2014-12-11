@@ -3,16 +3,33 @@ require 'minitest/autorun'
 require 'rack/test'
 require 'nokogiri'
 require 'nori'
+require 'active_support/testing/autorun'
+require 'active_support/test_case'
 
-require '../app.rb'
+require './app.rb'
 
-CONTENT_TYPES = {
-  # json: 'application/json',
-  # html: 'text/html',
-  xml: 'application/xml'
-}
+def create_fixtures(*fixture_set_names, &block)
+  FixtureSet.create_fixtures(ActiveSupport::TestCase.fixture_path, fixture_set_names, {}, &block)
+end
 
-module ContentHelpers
+class ActiveSupport::TestCase
+  ActiveRecord::Migration.check_pending!
+  include ActiveRecord::TestFixtures
+  self.fixture_path = "./test/fixtures/"
+  # Setup all fixtures in test/fixtures/*.(yml|csv) for all tests in alphabetical order.
+  #
+  # Note: You'll currently still have to declare fixtures explicitly in integration tests
+  # -- they do not yet inherit this setting
+  
+  fixtures :all
+  # Add more helper methods to be used by all tests here...
+  
+  CONTENT_TYPES = {
+    # json: 'application/json',
+    # html: 'text/html',
+    xml: 'application/xml'
+  }
+  
   def set_content_type(content_type_str, content_type, body_obj = nil)
     header 'Accept', content_type_str
     header 'CONTENT_TYPE', content_type_str
@@ -76,5 +93,22 @@ module ContentHelpers
     end
     
     { rows: rows, columns: columns, data: data }
+  end
+  
+  def check_response_data(res, real_res)
+    assert res, res
+    assert res[:columns], res
+    assert res[:rows], res
+    
+    assert_equal real_res.columns.length, res[:columns].length, res[:columns]
+    res[:columns].each_index do |i|
+      assert_equal real_res.columns[i], res[:columns][i], res[:columns]
+    end
+    
+    res[:rows].each_index do |i|
+      res[:rows][i].each_index do |j|
+        assert_equal real_res.rows[i][j], res[:rows][i][j]
+      end
+    end
   end
 end

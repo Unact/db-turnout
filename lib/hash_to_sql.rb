@@ -115,7 +115,7 @@ module HashToSql
       field = str_key[0..predicate_index - 2]
       return AREL_PREDICATES[i-1], field
     else
-      raise Exception, "Неправильный формат ключа. Предикат не найден."
+      raise Exception, "Неправильный формат ключа. Предикат не найден. Доступные предикаты: #{AREL_PREDICATES}"
     end
   end
 end

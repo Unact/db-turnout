@@ -1,7 +1,10 @@
 db-turnout
 ==========
 
-Приложение позволяет предоставлять доступ к СУБД посредством HTTP-запросов. Сделано на [Sinatra](www.sinatrarb.com/intro.html)
+Приложение позволяет предоставлять доступ к СУБД посредством HTTP-запросов.
+
+Сделано на [Sinatra](www.sinatrarb.com/intro.html)
+
 Параметры запроса позволяют управлять ограничениями, списком выбора и сортировкой.
 
 Соответствие http-параметров структурам данных ruby:
@@ -29,7 +32,7 @@ tables/table_name?s[]=name&s[]=t
 SELECT name, t FROM table
 
 tables/table_name?s[name]=new_name&s[t]=t1
-SELECT name AS name, t AS t1 FROM table
+SELECT name AS new_name, t AS t1 FROM table
 ```
 
 Управление сортировкой
@@ -52,44 +55,10 @@ SELECT * FROM table ORDER BY name desc, t asc
 За ограничения отвечает параметр q. Наименования параметров могут быть или предикатами условий AREL, или логическими операторами. Параметры обрабатываются в том порядке, в котором встречаются в строке запроса.
 Параметр может содержать вложенные значения для ключей and и or. Параметры на первом уровне трактуются как значения ключа со значением AND.
 
-Примеры
-```
-HTTP tables/table_name?q[name_eq]=a
-RUBY { name: 'a' }
-AREL TableName.where(TableName[:name].eq('a'))
-SQL SELECT * FROM table WHERE name = 'a'
+Более подробные примеры можно посмотреть здесь: [Примеры](https://github.com/sov-87/db-turnout/blob/master/test/tables_test.rb)
 
-HTTP /tables/spree_users?s[email]=mail&s[login]=login&order[email]=desc&q[id_eq]=1&q[or][id_lt]=5&q[or][id_gt]=8&q[or][and][id_gt]=0&q[or][and][or][id_lt]=1&q[or][and][or][id_gt]=2&q[or][and][email_not_eq]=bt&q[or][email_eq]=1
-RUBY {
-      s: {email: :mail, login: :login },
-      order: {email: :desc },
-      q: {
-        id_eq: 1,
-        or: {
-          id_lt: 5,
-          id_gt: 8,
-          and: {
-            id_gt: 0,
-            or: { id_lt: 1, id_gt: 2 },
-            email_not_eq: 'bt' },
-          email_eq: '1'
-        }
-      }
-    }
-SELECT
-  "spree_users"."email" AS "mail",
-  "spree_users"."login" AS "login"
-FROM
-  "spree_users"
-WHERE
-  ("spree_users"."id" = 1
-  OR
-  (
-    ("spree_users"."id" < 5
-    OR
-    "spree_users"."id" > 8)
-    AND
-    ("spree_users"."id" > 0
-    OR
-    ("spree_users"."id" < 1 OR "spree_users"."id" > 2)) AND "spree_users"."email" != 'bt' OR "spree_users"."email" = '1'))  ORDER BY "email" desc
-```
+Вызов процедур
+--------------------------
+Процедуры вызываются по ссылкам вида ```/procedures/procedure_name```
+
+Параметры передаются или в строке, или в теле запроса в виде массива. Параметры, представляющие из себя объекты, будут переданы в процедуру как xml.

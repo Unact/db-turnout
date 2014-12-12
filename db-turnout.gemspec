@@ -7,7 +7,14 @@ Gem::Specification.new do |s|
   s.description = "Use in your Sinatra applications for http rest access to DB"
   s.authors     = ["sov-87"]
   s.email       = 'afetisov87@gmail.com'
-  s.files       = ["lib/db-turnout.rb", "lib/controllers", "lib/helpers", "lib/sql"]
+  s.files       = [
+    "lib/db-turnout.rb",
+    "lib/controllers.rb",
+    "lib/controllers/base_controller.rb",
+    "lib/controllers/procedures_controller.rb",
+    "lib/controllers/tables_controller.rb",
+    "lib/helpers.rb",
+    "lib/sql.rb"]
   s.homepage    = 'https://github.com/sov-87/db-turnout'
   s.required_ruby_version = '>= 2.1.0'
   s.required_rubygems_version = '>= 1.8.11'

@@ -6,13 +6,13 @@ module Helpers
       case type_str
       when "text/html"
         mime_found = true
-        return erb(:index, locals: { res: data }), type_str
+        return (data ? erb(:index, locals: { res: data }) : nil), type_str
       when 'text/json', 'application/json'
         mime_found = true
-        return data.to_json, type_str
+        return (data ? data.to_json : nil), type_str
       when 'text/xml', 'application/xml', "application/xhtml+xml"
         mime_found = true
-        return data.to_ary.to_xml(:root => params[:table_name]), type_str
+        return (data ? data.to_ary.to_xml(:root => params[:table_name]) : nil), type_str
       end
     end
     raise Exception, "Данный тип MIME не поддерживается" unless mime_found
@@ -40,5 +40,10 @@ module Helpers
       end
     end
     raise Exception, "Данный тип MIME не поддерживается" unless mime_found
+  end
+  
+  def get_body_data_from_request
+    body_data_str = request.body.read
+    get_acceptable_body(body_data_str)
   end
 end

@@ -1,6 +1,12 @@
 class App < Sinatra::Base
   
-  get '/tables/:table_name/?:id?.?:format?', provides: ['json', 'xml', 'html'] do
+  table_route_data = ['/tables/:table_name/?:id?.?:format?', provides: ['json', 'xml', 'html']]
+  
+  before table_route_data[0] do
+    halt 404 unless params[:table_name][VALID_SQL_NAME_REGEXP] == params[:proc_name]
+  end
+  
+  get *table_route_data do
     select_manager = Arel::SelectManager.new(ActiveRecord::Base)
     table = Arel::Table.new(params[:table_name])
     
@@ -26,12 +32,13 @@ class App < Sinatra::Base
   end
   
   post '/tables/:table_name.?:format?', provides: ['json', 'xml', 'html'] do
-    body_data_str = request.body.read
-    body_data = get_acceptable_body(body_data_str)
+    body_data = get_body_data_from_request
     
     if body_data.nil? || body_data.empty?
       content_type request.accept.first
       halt
+    else
+      body_data
     end
     
     table = Arel::Table.new(params[:table_name])
@@ -65,13 +72,14 @@ class App < Sinatra::Base
     end
   end
   
-  put '/tables/:table_name/?:id?.?:format?', provides: ['json', 'xml', 'html'] do
-    body_data_str = request.body.read
-    body_data = get_acceptable_body(body_data_str)
+  put *table_route_data do
+    body_data = get_body_data_from_request
     
     if body_data.nil? || body_data.empty?
       content_type request.accept.first
       halt
+    else
+      body_data
     end
     
     table = Arel::Table.new(params[:table_name])
@@ -111,7 +119,7 @@ class App < Sinatra::Base
     end
   end
   
-  delete '/tables/:table_name/?:id?.?:format?', provides: ['json', 'xml', 'html'] do
+  delete *table_route_data do
     delete_manager = Arel::DeleteManager.new(ActiveRecord::Base)
     table = Arel::Table.new(params[:table_name])
     

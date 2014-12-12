@@ -23,6 +23,17 @@ class MyTest < ActiveSupport::TestCase
     end
   end
   
+  def test_authorization
+    get '/tables/test_table', nil
+    assert last_response.forbidden?
+  end
+  
+  def test_sql_table_name_filter
+    header 'AUTHORIZATION_KEY', SECURITY_KEY
+    get '/tables/test_table;adssa', nil
+    assert last_response.not_found?
+  end
+  
   def index_content_type_test(content_type, content_type_str)
     header 'AUTHORIZATION_KEY', SECURITY_KEY
     

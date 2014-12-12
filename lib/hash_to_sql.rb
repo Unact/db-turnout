@@ -1,3 +1,5 @@
+require 'active_support'
+
 module HashToSql
   SELECT_LIMIT = 500
   
@@ -55,7 +57,11 @@ module HashToSql
       select_hash = element.first
       table[select_hash[0]].as(ActiveRecord::Base.connection.quote_column_name(select_hash[1]))
     when String
-      table[element].as(ActiveRecord::Base.connection.quote_column_name(element))
+      if element!='*'
+        table[element].as(ActiveRecord::Base.connection.quote_column_name(element))
+      else
+        Arel.star
+      end
     else
       raise Exception, "Неверный вид параметра для списка выбора. #{element}"
     end
@@ -128,6 +134,20 @@ module HashToSql
       return AREL_PREDICATES[i-1], field
     else
       raise Exception, "Неправильный формат ключа. Предикат не найден. Доступные предикаты: #{AREL_PREDICATES}"
+    end
+  end
+  
+  def self.get_proc_params_from_object(p)
+    if p && !p.empty?
+      p.map do |proc_param|
+        proc_param_str = proc_param
+        unless String===proc_param
+          proc_param_str = proc_param.to_xml
+        end
+        ActiveRecord::Base.connection.quote(proc_param_str)
+      end
+    else
+      []
     end
   end
 end

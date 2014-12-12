@@ -1,5 +1,5 @@
 GIT
-  remote: git://github.com/sov-87/activerecord-sqlanywhere-adapter.git
+  remote: git://github.com/Unact/activerecord-sqlanywhere-adapter.git
   revision: c7114e0bd1f0029558a4146fd789d2c71af46ad0
   branch: rails40
   specs:

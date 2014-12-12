@@ -1,12 +1,6 @@
 require File.expand_path '../test_helper.rb', __FILE__
 
 class MyTest < ActiveSupport::TestCase
-
-  include Rack::Test::Methods
-  
-  def app
-    App
-  end
   
   CONTENT_TYPES.each_pair do |content_type, content_type_str|
     define_method("test_index_#{content_type}".to_sym) do
@@ -110,7 +104,7 @@ class MyTest < ActiveSupport::TestCase
     
     real_res = ActiveRecord::Base.connection.select_all("
     SELECT * FROM test_table WHERE name = '#{body_obj[:data][:name]}'")
-    puts real_res.inspect
+    
     check_response_data(res, real_res)
   end
   
@@ -132,7 +126,7 @@ class MyTest < ActiveSupport::TestCase
     
     real_res = ActiveRecord::Base.connection.select_all("
     SELECT * FROM test_table WHERE name = '#{body_obj[:data].first[:name]}'")
-    puts real_res.inspect
+    
     check_response_data(res, real_res)
   end
   

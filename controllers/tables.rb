@@ -3,7 +3,7 @@ class App < Sinatra::Base
   table_route_data = ['/tables/:table_name/?:id?.?:format?', provides: ['json', 'xml', 'html']]
   
   before table_route_data[0] do
-    halt 404 unless params[:table_name][VALID_SQL_NAME_REGEXP] == params[:proc_name]
+    halt 404 unless params[:table_name][VALID_SQL_NAME_REGEXP] == params[:table_name]
   end
   
   get *table_route_data do

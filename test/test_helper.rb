@@ -24,6 +24,12 @@ class ActiveSupport::TestCase
   fixtures :all
   # Add more helper methods to be used by all tests here...
   
+  include Rack::Test::Methods
+  
+  def app
+    App
+  end
+  
   CONTENT_TYPES = {
     json: 'application/json',
     # html: 'text/html',

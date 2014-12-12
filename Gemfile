@@ -16,13 +16,10 @@ gem 'activerecord'
 gem 'activesupport'
 
 gem "sqlanywhere"
-gem 'activerecord-sqlanywhere-adapter', github: 'sov-87/activerecord-sqlanywhere-adapter', branch: 'rails40'
+gem 'activerecord-sqlanywhere-adapter', github: 'Unact/activerecord-sqlanywhere-adapter', branch: 'rails40'
+gem 'sqlite3'
 
 group :production do
    # Use unicorn as the app server
    gem 'unicorn'
-end
-
-group :test do
-  gem 'sqlite3'
 end

@@ -6,8 +6,6 @@ require 'nori'
 require 'active_support/testing/autorun'
 require 'active_support/test_case'
 
-require './app.rb'
-
 def create_fixtures(*fixture_set_names, &block)
   FixtureSet.create_fixtures(ActiveSupport::TestCase.fixture_path, fixture_set_names, {}, &block)
 end

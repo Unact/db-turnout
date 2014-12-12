@@ -4,9 +4,6 @@ module Helpers
     request.accept.each do |type|
       type_str = type.to_s
       case type_str
-      when "text/html"
-        mime_found = true
-        return (data ? erb(:index, locals: { res: data }) : nil), type_str
       when 'text/json', 'application/json'
         mime_found = true
         return (data ? data.to_json : nil), type_str

@@ -1,6 +1,6 @@
-class App < Sinatra::Base
+module ProceduresController
   
-  proc_route_data = ['/procedures/:proc_name.?:format?', provides: ['json', 'xml', 'html']]
+  proc_route_data = ["#{PROCEDURES_PATH}/:proc_name.?:format?", PROVIDES_ARRAY]
   
   before proc_route_data[0] do
     halt 404 unless params[:proc_name][VALID_SQL_NAME_REGEXP] == params[:proc_name]

@@ -1,6 +1,6 @@
 require 'active_support'
 
-module HashToSql
+module Sql
   SELECT_LIMIT = 500
   
   LOGICAL_OPERATORS = ['or', 'and']

@@ -1,13 +1,13 @@
-module ProceduresController
+class ProceduresController < BaseController
   
-  proc_route_data = ["#{PROCEDURES_PATH}/:proc_name.?:format?", PROVIDES_ARRAY]
+  proc_route_data = ["/:proc_name.?:format?", PROVIDES_ARRAY]
   
   before proc_route_data[0] do
     halt 404 unless params[:proc_name][VALID_SQL_NAME_REGEXP] == params[:proc_name]
   end
   
   get *proc_route_data do
-    params_list = HashToSql::get_proc_params_from_object(params[:p])
+    params_list = Sql::get_proc_params_from_object(params[:p])
     generate_output(params_list)
   end
   
@@ -22,7 +22,7 @@ module ProceduresController
   end
   
   delete *proc_route_data do
-    params_list = HashToSql::get_proc_params_from_object(params[:p])
+    params_list = Sql::get_proc_params_from_object(params[:p])
     ActiveRecord::Base.connection.execute("call #{params[:proc_name]}(#{params_list.join(', ')})")
     content_type request.accept.first
     nil
@@ -32,7 +32,7 @@ module ProceduresController
   def get_proc_params_from_body
     body_data = get_body_data_from_request
     
-    HashToSql::get_proc_params_from_object(body_data["p"])
+    Sql::get_proc_params_from_object(body_data["p"])
   end
   
   def generate_output(params_list)

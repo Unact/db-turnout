@@ -1,6 +1,5 @@
-module TablesController
-  
-  table_route_data = ["#{TABLES_PATH}/:table_name/?:id?.?:format?", provides: PROVIDES_ARRAY]
+class TablesController < BaseController
+  table_route_data = ["/:table_name/?:id?.?:format?", provides: PROVIDES_ARRAY]
   
   before table_route_data[0] do
     halt 404 unless params[:table_name][VALID_SQL_NAME_REGEXP] == params[:table_name]
@@ -10,19 +9,19 @@ module TablesController
     select_manager = Arel::SelectManager.new(ActiveRecord::Base)
     table = Arel::Table.new(params[:table_name])
     
-    condition = HashToSql::create_condition(
+    condition = Sql::create_condition(
       table,
       nil,
       params[:id] ? { id_eq: params[:id] } : (params[:q] ? params[:q].clone : nil),
       'and') if params[:id] || params[:q]
     
-    select_list = params[:s] ? HashToSql::create_select_list(table, params[:s].clone) : Arel.star
+    select_list = params[:s] ? Sql::create_select_list(table, params[:s].clone) : Arel.star
     
     select_manager = table
     select_manager = select_manager.where(condition) if condition
     select_manager = select_manager.project(select_list)
-    select_manager = select_manager.order(HashToSql::create_order_list(params[:order])) if params[:order]
-    select_manager = select_manager.take(params[:limit] || HashToSql::SELECT_LIMIT) if params[:limit] || params[:limitless].nil?
+    select_manager = select_manager.order(Sql::create_order_list(params[:order])) if params[:order]
+    select_manager = select_manager.take(params[:limit] || Sql::SELECT_LIMIT) if params[:limit] || params[:limitless].nil?
     sql = select_manager.to_sql
     
     raw_data = ActiveRecord::Base.connection.select_all(sql)
@@ -45,7 +44,7 @@ module TablesController
     
     primary_key = table.primary_key
     
-    insert_list = HashToSql::create_insert_list(table, body_data["data"])
+    insert_list = Sql::create_insert_list(table, body_data["data"])
     
     if primary_key
       ids = []
@@ -84,7 +83,7 @@ module TablesController
     
     table = Arel::Table.new(params[:table_name])
     
-    condition = HashToSql::create_condition(
+    condition = Sql::create_condition(
       table,
       nil,
       params[:id] ? { id_eq: params[:id] } : (body_data["q"] ? body_data["q"].clone : nil),
@@ -102,7 +101,7 @@ module TablesController
       ids = key_res.rows.map{ |v| v.first }
     end
     
-    update_list = HashToSql::create_update_list(table, body_data["data"])
+    update_list = Sql::create_update_list(table, body_data["data"])
     
     update_manager = Arel::UpdateManager.new(ActiveRecord::Base)
     update_manager.table(table)
@@ -123,7 +122,7 @@ module TablesController
     delete_manager = Arel::DeleteManager.new(ActiveRecord::Base)
     table = Arel::Table.new(params[:table_name])
     
-    condition = HashToSql::create_condition(
+    condition = Sql::create_condition(
       table,
       nil,
       params[:id] ? { id_eq: params[:id] } : (params[:q] ? params[:q].clone : nil),

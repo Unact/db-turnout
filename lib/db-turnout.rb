@@ -5,8 +5,8 @@ require 'helpers'
 require 'sql'
 
 module DbTurnout
-  include Helpers
-  include BaseController
-  include ProceduresController
-  include TablesController
+  def self.register_all(procedures_path = '/procedures', tables_path = '/tables')
+    map(procedures_path) { run ProceduresController }
+    map(tables_path) { run TablesController }
+  end
 end

@@ -14,8 +14,8 @@ Gem::Specification.new do |s|
   
   s.add_dependency "rack-test"
   s.add_dependency "sinatra-contrib"
-  s.add_dependency "active_record"
-  s.add_dependency "active_support"
+  s.add_dependency "activerecord"
+  s.add_dependency "activesupport"
   s.add_dependency "rack"
   s.add_dependency "minitest"
 end

@@ -1,4 +1,6 @@
 require 'sinatra/base'
+require 'helpers'
+require '../helpers'
 
 class BaseController < Sinatra::Base
   include Helpers

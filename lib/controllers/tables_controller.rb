@@ -1,8 +1,17 @@
-class TablesController < BaseController
+class TablesController < Sinatra::Base
+  include Helpers
+  
   table_route_data = ["/:table_name/?:id?.?:format?", provides: PROVIDES_ARRAY]
   
   before table_route_data[0] do
     halt 404 unless params[:table_name][VALID_SQL_NAME_REGEXP] == params[:table_name]
+    if params[:owner]
+      halt 404 unless params[:owner][VALID_SQL_NAME_REGEXP] == params[:owner]
+      @table_name = "#{params[:owner]}.#{params[:table_name]}"
+      params.delete(:owner)
+    else
+      @table_name = params[:table_name]
+    end
   end
   
   get *table_route_data do
@@ -30,7 +39,7 @@ class TablesController < BaseController
     data
   end
   
-  post '/tables/:table_name.?:format?', provides: ['json', 'xml', 'html'] do
+  put *table_route_data do
     body_data = get_body_data_from_request
     
     if body_data.nil? || body_data.empty?

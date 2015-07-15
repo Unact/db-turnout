@@ -39,7 +39,7 @@ class TablesController < Sinatra::Base
     data
   end
   
-  put *table_route_data do
+  post *table_route_data do
     body_data = get_body_data_from_request
     
     if body_data.nil? || body_data.empty?

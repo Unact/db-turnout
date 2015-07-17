@@ -1,39 +1,41 @@
 class ProceduresController < Sinatra::Base
   include Helpers
   
-  proc_route_data = ["/:proc_name.?:format?", provides: PROVIDES_ARRAY]
-  
-  before proc_route_data[0] do
-    halt 404 unless params[:proc_name][VALID_SQL_NAME_REGEXP] == params[:proc_name]
-    if params[:owner]
-      halt 404 unless params[:owner][VALID_SQL_NAME_REGEXP] == params[:owner]
-      @proc_name = "#{params[:owner]}.#{params[:proc_name]}"
-      params.delete(:owner)
-    else
-      @proc_name = params[:proc_name]
+  def initialize(app, options = {})
+    @app = app
+    
+    prefix ||= options[:prefix]
+    postprocess_block = options[:postprocess_block]
+    
+    proc_route_data = ["#{prefix}/:proc_name.?:format?", provides: PROVIDES_ARRAY]
+    
+    self.class.before proc_route_data[0] do
+      @proc_name = ActiveRecord::Base.connection.quote_table_name params[:proc_name]
     end
-  end
-  
-  get *proc_route_data do
-    params_list = Sql::get_proc_params_from_object(params[:p])
-    generate_output(params_list)
-  end
-  
-  post *proc_route_data do
-    params_list = get_proc_params_from_body
-    generate_output(params_list)
-  end
-  
-  put *proc_route_data do
-    params_list = get_proc_params_from_body
-    generate_output(params_list)
-  end
-  
-  delete *proc_route_data do
-    params_list = Sql::get_proc_params_from_object(params[:p])
-    ActiveRecord::Base.connection.execute("call #{@proc_name}(#{params_list.join(', ')})")
-    content_type request.accept.first
-    nil
+    
+    self.class.get *proc_route_data do
+      params_list = Sql::get_proc_params_from_object(params[:p])
+      generate_output(params_list)
+    end
+    
+    self.class.post *proc_route_data do
+      params_list = get_proc_params_from_body
+      generate_output(params_list)
+    end
+    
+    self.class.put *proc_route_data do
+      params_list = get_proc_params_from_body
+      generate_output(params_list)
+    end
+    
+    self.class.delete *proc_route_data do
+      params_list = Sql::get_proc_params_from_object(params[:p])
+      ActiveRecord::Base.connection.execute("call #{@proc_name}(#{params_list.join(', ')})")
+      content_type request.accept.first
+      nil
+    end
+    
+    super @app
   end
   
   private
@@ -43,8 +45,9 @@ class ProceduresController < Sinatra::Base
     Sql::get_proc_params_from_object(body_data["p"])
   end
   
-  def generate_output(params_list)
+  def generate_output(params_list, postprocess_block)
     raw_data = ActiveRecord::Base.connection.select_all("call #{@proc_name}(#{params_list.join(', ')})")
+    raw_data = postprocess_block.call(raw_data, request) if postprocess_block
     data, type_str = generate_acceptable_output(raw_data)
     content_type(type_str)
     data

@@ -1,7 +1,7 @@
 module Helpers
   VALID_SQL_NAME_REGEXP = /^[[:alnum:]_]+/
   
-  PROVIDES_ARRAY = ['json', 'xml']
+  PROVIDES_ARRAY = ['json', 'xml', 'html']
   
   def generate_acceptable_output(data)
     mime_found = false

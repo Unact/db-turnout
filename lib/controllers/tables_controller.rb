@@ -20,7 +20,7 @@ class TablesController < Sinatra::Base
       condition = Sql::create_condition(
         table,
         nil,
-        params[:id] ? { id_eq: params[:id] } : (params[:q] ? params[:q].clone : nil),
+        params[:id] ? { "id_eq" => params[:id] } : (params[:q] ? params[:q].clone : nil),
         'and') if params[:id] || params[:q]
       
       select_list = params[:s] ? Sql::create_select_list(table, params[:s].clone) : Arel.star
@@ -29,7 +29,7 @@ class TablesController < Sinatra::Base
       select_manager = select_manager.where(condition) if condition
       select_manager = select_manager.project(select_list)
       select_manager = select_manager.order(Sql::create_order_list(params[:order])) if params[:order]
-      select_manager = select_manager.take(params[:limit] || Sql::SELECT_LIMIT) if params[:limit] || params[:limitless].nil?
+      select_manager = select_manager.take(params[:limit].to_i || Sql::SELECT_LIMIT) if params[:limit] || params[:limitless].nil?
       sql = select_manager.to_sql
       
       raw_data = ActiveRecord::Base.connection.select_all(sql)
@@ -76,7 +76,7 @@ class TablesController < Sinatra::Base
           ids << ActiveRecord::Base.connection.insert(sql)
         end
         
-        get_content_for_ids(table, ids)
+        get_content_for_ids(table, ids, postprocess_block)
       end
     end
     
@@ -95,11 +95,11 @@ class TablesController < Sinatra::Base
       condition = Sql::create_condition(
         table,
         nil,
-        params[:id] ? { id_eq: params[:id] } : (body_data["q"] ? body_data["q"].clone : nil),
+        params[:id] ? { "id_eq" => params[:id] } : (body_data["q"] ? body_data["q"].clone : nil),
         'and') if params[:id] || body_data["q"]
       
       ids = nil
-      primary_key = table.primary_key.name
+      primary_key = ActiveRecord::Base.connection.primary_key params[:table_name]
       if params[:id]
         ids = [params[:id]] 
       else
@@ -120,7 +120,7 @@ class TablesController < Sinatra::Base
       
       ActiveRecord::Base.connection.update(sql)
       if ids && !ids.empty? && !params[:silent]
-        get_content_for_ids(table, ids)
+        get_content_for_ids(table, ids, postprocess_block)
       else
         content_type request.accept.first
         nil
@@ -134,7 +134,7 @@ class TablesController < Sinatra::Base
       condition = Sql::create_condition(
         table,
         nil,
-        params[:id] ? { id_eq: params[:id] } : (params[:q] ? params[:q].clone : nil),
+        params[:id] ? { "id_eq" => params[:id] } : (params[:q] ? params[:q].clone : nil),
         'and') if params[:id] || params[:q]
       
       delete_manager.from(table)
@@ -151,7 +151,9 @@ class TablesController < Sinatra::Base
   
   private
   def get_records_by_ids(table, ids)
-    primary_key = table.primary_key.name
+    p params[:table_name]
+    primary_key = ActiveRecord::Base.connection.primary_key params[:table_name]
+    p primary_key
     select_manager = table
     select_manager = select_manager.project(Arel.star)
     select_manager = select_manager.where(table[primary_key].in(ids))

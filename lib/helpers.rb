@@ -5,23 +5,28 @@ module Helpers
   
   def generate_acceptable_output(data)
     mime_found = false
-    request.accept.each do |type|
+    
+    help_block = Proc.new do |type|
       type_str = type.to_s
       case type_str
-      when 'text/json', 'application/json'
+      when 'text/json', 'application/json', '*/*'
         mime_found = true
-        return (data ? data.to_json : nil), type_str
+        return (data ? data.to_json : nil), (type_str=='*/*' ? 'text/json' : type_str)
       when 'text/xml', 'application/xml', "application/xhtml+xml"
         mime_found = true
         return (data ? data.to_ary.to_xml(:root => params[:table_name]) : nil), type_str
       end
     end
+    
+    request.accept.each &help_block
+    help_block.call request.media_type
     raise Exception, "Данный тип MIME не поддерживается" unless mime_found
   end
   
   def get_acceptable_body(data_str)
     mime_found = false
-    request.accept.each do |type|
+    
+    help_block = Proc.new do |type|
       type_str = type.to_s
       case type_str
       when "text/html"
@@ -40,6 +45,9 @@ module Helpers
         return body_data = body_data.first[1]
       end
     end
+    
+    request.accept.each &help_block
+    help_block.call request.media_type
     raise Exception, "Данный тип MIME не поддерживается" unless mime_found
   end
   

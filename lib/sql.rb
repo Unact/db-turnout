@@ -1,6 +1,6 @@
 require 'active_support'
 
-module HashToSql
+module Sql
   SELECT_LIMIT = 500
   
   LOGICAL_OPERATORS = ['or', 'and']
@@ -138,13 +138,17 @@ module HashToSql
   end
   
   def self.get_proc_params_from_object(p)
-    if p && !p.empty?
-      p.map do |proc_param|
-        proc_param_str = proc_param
-        unless String===proc_param
-          proc_param_str = proc_param.to_xml
+    if p
+      if Enumerable===p
+        p.map do |proc_param|
+          proc_param_str = proc_param
+          unless String===proc_param
+            proc_param_str = proc_param.to_xml
+          end
+          ActiveRecord::Base.connection.quote(proc_param_str)
         end
-        ActiveRecord::Base.connection.quote(proc_param_str)
+      elsif String===p
+        [p]
       end
     else
       []

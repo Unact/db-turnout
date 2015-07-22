@@ -7,9 +7,9 @@ class TablesController < Sinatra::Base
     prefix ||= options[:prefix]
     postprocess_block = options[:postprocess_block]
     
-    table_route_data = ["#{prefix}/:table_name/?:id?.?:format?", provides: PROVIDES_ARRAY]
+    table_route_data = "#{prefix}/:table_name/?:id?.?:format?"
     
-    self.class.before table_route_data[0] do
+    self.class.before table_route_data do
       @table_name = ActiveRecord::Base.connection.quote_table_name params[:table_name]
     end
     

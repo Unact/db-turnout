@@ -7,9 +7,9 @@ class ProceduresController < Sinatra::Base
     prefix ||= options[:prefix]
     postprocess_block = options[:postprocess_block]
     
-    proc_route_data = ["#{prefix}/:proc_name.?:format?", provides: PROVIDES_ARRAY]
+    proc_route_data = "#{prefix}/:proc_name.?:format?"
     
-    self.class.before proc_route_data[0] do
+    self.class.before proc_route_data do
       @proc_name = ActiveRecord::Base.connection.quote_table_name params[:proc_name]
     end
     

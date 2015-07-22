@@ -1,18 +1,16 @@
 module Helpers
   VALID_SQL_NAME_REGEXP = /^[[:alnum:]_]+/
   
-  PROVIDES_ARRAY = ['json', 'xml', 'html']
-  
   def generate_acceptable_output(data)
     mime_found = false
     
     help_block = Proc.new do |type|
       type_str = type.to_s
       case type_str
-      when 'text/json', 'application/json', '*/*'
+      when /json/, '*/*'
         mime_found = true
         return (data ? data.to_json : nil), (type_str=='*/*' ? 'text/json' : type_str)
-      when 'text/xml', 'application/xml', "application/xhtml+xml"
+      when /xml/
         mime_found = true
         return (data ? data.to_ary.to_xml(:root => params[:table_name]) : nil), type_str
       end
@@ -32,10 +30,10 @@ module Helpers
       when "text/html"
         mime_found = true
         return data_str
-      when 'text/json', 'application/json'
+      when /json/
         mime_found = true
         return ActiveSupport::JSON.decode(data_str)
-      when 'text/xml', 'application/xml', "application/xhtml+xml"
+      when /xml/
         mime_found = true
         parser = Nori.new
         body_data = parser.parse(data_str)

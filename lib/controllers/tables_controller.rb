@@ -51,7 +51,7 @@ class TablesController < Sinatra::Base
       
       table = Arel::Table.new(@table_name)
       
-      primary_key = table.primary_key
+      primary_key = ActiveRecord::Base.connection.primary_key params[:table_name]
       
       insert_list = Sql::create_insert_list(table, body_data["data"])
       
@@ -60,7 +60,6 @@ class TablesController < Sinatra::Base
         insert_list.each do |insert_row|
           insert_manager = Arel::InsertManager.new(ActiveRecord::Base)
           insert_manager.insert(insert_row)
-          insert_manager.where(condition) if condition
           sql << insert_manager.to_sql
         end
         ActiveRecord::Base.connection.insert(sql.join(';\n'))
@@ -92,14 +91,16 @@ class TablesController < Sinatra::Base
       
       table = Arel::Table.new(@table_name)
       
+      primary_key = ActiveRecord::Base.connection.primary_key params[:table_name]
+      
       condition = Sql::create_condition(
         table,
         nil,
-        params[:id] ? { "id_eq" => params[:id] } : (body_data["q"] ? body_data["q"].clone : nil),
+        params[:id] ? { "#{primary_key ? primary_key : 'id'}_eq" => params[:id] } : (body_data["q"] ? body_data["q"].clone : nil),
         'and') if params[:id] || body_data["q"]
       
       ids = nil
-      primary_key = ActiveRecord::Base.connection.primary_key params[:table_name]
+      
       if params[:id]
         ids = [params[:id]] 
       else

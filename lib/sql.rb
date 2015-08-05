@@ -84,6 +84,10 @@ module Sql
           [table[values[0]], values[1]]
         end
       end
+    elsif Hash===insert_array
+      [insert_array.map do |values|
+        [table[values[0]], values[1]]
+      end]
     else
       raise Exception, "Неверный вид параметра для списка вставки. #{insert_array}"
     end

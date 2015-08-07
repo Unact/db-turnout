@@ -5,7 +5,7 @@ class ProceduresController < Sinatra::Base
     prefix = options[:prefix]
     postprocess_block = options[:postprocess_block]
     
-    proc_route_data = "#{prefix}/:proc_name.?:format?"
+    proc_route_data = "#{prefix}/:proc_name"
     
     app.get *proc_route_data do
       params_list = Sql::get_proc_params_from_object(params[:p])

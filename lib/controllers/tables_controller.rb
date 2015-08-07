@@ -1,19 +1,17 @@
-class TablesController < Sinatra::Base
-  include Helpers
-  
+class TablesController
   def initialize(app, options = {})
-    @app = app
+    app.include Helpers
     
     prefix ||= options[:prefix]
     postprocess_block = options[:postprocess_block]
     
     table_route_data = "#{prefix}/:table_name/?:id?.?:format?"
     
-    self.class.before table_route_data do
+    app.before table_route_data do
       @table_name = ActiveRecord::Base.connection.quote_table_name params[:table_name]
     end
     
-    self.class.get *table_route_data do
+    app.get *table_route_data do
       select_manager = Arel::SelectManager.new(ActiveRecord::Base)
       table = Arel::Table.new(@table_name)
       
@@ -34,12 +32,12 @@ class TablesController < Sinatra::Base
       
       raw_data = ActiveRecord::Base.connection.select_all(sql)
       raw_data = postprocess_block.call(raw_data, request) if postprocess_block
-      data, type_str = generate_acceptable_output(raw_data)
+      data, type_str = generate_acceptable_output(raw_data, params[:table_name])
       content_type(type_str)
       data
     end
     
-    self.class.post *table_route_data do
+    app.post *table_route_data do
       body_data = get_body_data_from_request
       
       if body_data.nil? || body_data.empty?
@@ -75,11 +73,11 @@ class TablesController < Sinatra::Base
           ids << ActiveRecord::Base.connection.insert(sql)
         end
         
-        get_content_for_ids(table, ids, postprocess_block)
+        get_content_for_ids(table, params[:table_name], ids, postprocess_block)
       end
     end
     
-    self.class.put *table_route_data do
+    app.put *table_route_data do
       body_data = get_body_data_from_request
       
       if body_data.nil? || body_data.empty?
@@ -121,14 +119,14 @@ class TablesController < Sinatra::Base
       
       ActiveRecord::Base.connection.update(sql)
       if ids && !ids.empty? && !params[:silent]
-        get_content_for_ids(table, ids, postprocess_block)
+        get_content_for_ids(table, params[:table_name], ids, postprocess_block)
       else
         content_type request.accept.first
         nil
       end
     end
     
-    self.class.delete *table_route_data do
+    app.delete *table_route_data do
       delete_manager = Arel::DeleteManager.new(ActiveRecord::Base)
       table = Arel::Table.new(@table_name)
       
@@ -146,27 +144,5 @@ class TablesController < Sinatra::Base
       content_type request.accept.first
       nil
     end
-    
-    super @app
-  end
-  
-  private
-  def get_records_by_ids(table, ids)
-    p params[:table_name]
-    primary_key = ActiveRecord::Base.connection.primary_key params[:table_name]
-    p primary_key
-    select_manager = table
-    select_manager = select_manager.project(Arel.star)
-    select_manager = select_manager.where(table[primary_key].in(ids))
-    sql = select_manager.to_sql
-    ActiveRecord::Base.connection.select_all(sql)
-  end
-  
-  def get_content_for_ids(table, ids, postprocess_block)
-    raw_data = get_records_by_ids(table, ids)
-    raw_data = postprocess_block.call(raw_data, request) if postprocess_block
-    data, type_str = generate_acceptable_output(raw_data)
-    content_type(type_str)
-    data
   end
 end
